@@ -1,0 +1,7 @@
+version: '2'
+services:
+    app:
+        build: '.'
+        container_name: 'elasticsearch-7-connector'
+        volumes:
+            - '$PWD:/app'
