@@ -119,7 +119,7 @@ abstract class AbstractIndexDefiner implements IndexDefinerInterface
             }
 
             if ($definition[$key]['type'] === 'object') {
-                if (!\is_array($value)) {
+                if (!\is_array($value) && $value !== null) {
                     unset($object[$key]);
                     continue;
                 }
