@@ -30,6 +30,16 @@ abstract class AbstractIndexDefiner implements IndexDefinerInterface
     }
 
     /**
+     * Returns an array where the type is used as key and the index name is used as value.
+     *
+     * @return string[]
+     */
+    public function getSupportedIndices(): array
+    {
+        return [$this->getType() => $this->getIndexName($this->getType())];
+    }
+
+    /**
      * Returns the index definition for the given type.
      *
      * @param string $type

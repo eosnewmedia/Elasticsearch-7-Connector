@@ -35,6 +35,21 @@ class IndexDefinerRegistry implements ParallelIndexDefinerInterface
     }
 
     /**
+     * Returns an array where the type is used as key and the index name is used as value.
+     *
+     * @return string[]
+     */
+    public function getSupportedIndices(): array
+    {
+        $supportedIndices = [];
+        foreach (array_keys($this->definitions) as $type) {
+            $supportedIndices[$type] = $this->getIndexName($type);
+        }
+
+        return $supportedIndices;
+    }
+
+    /**
      * @param string $type
      * @return string|null
      */
