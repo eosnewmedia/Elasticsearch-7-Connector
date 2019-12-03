@@ -139,7 +139,7 @@ abstract class AbstractConnector
      * @return array
      * @throws RuntimeException
      */
-    private function prepareDocument(string $type, array $data): array
+    final protected function prepareDocument(string $type, array $data): array
     {
         $prepared = $this->indexDefiner->prepare($type, $data);
         if (!$prepared) {
@@ -157,7 +157,7 @@ abstract class AbstractConnector
      * @param bool $overwrite
      * @throws RuntimeException
      */
-    private function executeCreateIndex(string $indexName, string $type, bool $overwrite = false): void
+    final protected function executeCreateIndex(string $indexName, string $type, bool $overwrite = false): void
     {
         if ($this->getConnection()->indices()->exists(['index' => $indexName])) {
             if (!$overwrite) {
@@ -276,7 +276,7 @@ abstract class AbstractConnector
      * @param string $id
      * @return array
      */
-    private function prepareParameters(array $parameters, string $type, string $id): array
+    final protected function prepareParameters(array $parameters, string $type, string $id): array
     {
         if ($this->useBulk()) {
             $parameters['_index'] = $this->getIndexName($type);
