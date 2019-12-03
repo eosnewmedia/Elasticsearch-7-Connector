@@ -56,7 +56,7 @@ abstract class AbstractConnector
     /**
      * @return bool
      */
-    private function useBulk(): bool
+    final protected function useBulk(): bool
     {
         return $this->bulkSize > 1;
     }
@@ -108,7 +108,7 @@ abstract class AbstractConnector
      * @return array
      * @throws RuntimeException
      */
-    private function getIndexDefinition(string $type): array
+    final protected function getIndexDefinition(string $type): array
     {
         $indexDefinition = $this->indexDefiner->getIndexDefinition($type);
         if (!$indexDefinition) {
@@ -123,7 +123,7 @@ abstract class AbstractConnector
      * @return array
      * @throws RuntimeException
      */
-    private function getPipelineDefinitions(string $type): array
+    final protected function getPipelineDefinitions(string $type): array
     {
         $pipelineDefinitions = $this->indexDefiner->getPipelineDefinitions($type);
         if (!$pipelineDefinitions) {
@@ -202,7 +202,7 @@ abstract class AbstractConnector
      * @param string $type
      * @throws \RuntimeException
      */
-    private function executeDropIndex(string $indexName, string $type): void
+    final protected function executeDropIndex(string $indexName, string $type): void
     {
         if (!$this->getConnection()->indices()->exists(['index' => $indexName])) {
             return;
@@ -294,7 +294,7 @@ abstract class AbstractConnector
      *
      * @param bool $force
      */
-    private function executeBulk(bool $force = false): void
+    protected function executeBulk(bool $force = false): void
     {
         // don't execute on empty body
         if (!$this->bulkBody || !$this->useBulk()) {

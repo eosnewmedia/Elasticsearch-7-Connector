@@ -36,7 +36,7 @@ abstract class AbstractParallelIndexConnector extends AbstractConnector
      * @return string
      * @throws RuntimeException
      */
-    protected function getParallelIndexName(string $type): string
+    final protected function getParallelIndexName(string $type): string
     {
         $indexName = $this->parallelIndexDefiner->getParallelIndexName($type);
         if (!$indexName) {
@@ -49,7 +49,7 @@ abstract class AbstractParallelIndexConnector extends AbstractConnector
     /**
      * @param string $type
      */
-    protected function switchToParallelIndex(string $type): void
+    final protected function switchToParallelIndex(string $type): void
     {
         $this->parallelIndexDefiner->switchToParallelIndex($type);
     }
