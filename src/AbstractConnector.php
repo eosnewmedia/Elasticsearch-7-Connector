@@ -64,7 +64,7 @@ abstract class AbstractConnector
     /**
      * @return Client
      */
-    final protected function getConnection(): Client
+    protected function getConnection(): Client
     {
         if (!$this->connection) {
             $this->connection = $this->connectionFactory->createConnection();
@@ -78,7 +78,7 @@ abstract class AbstractConnector
      * @return string
      * @throws RuntimeException
      */
-    final protected function getIndexName(string $type): string
+    protected function getIndexName(string $type): string
     {
         $indexName = $this->indexDefiner->getIndexName($type);
         if (!$indexName) {
@@ -92,7 +92,7 @@ abstract class AbstractConnector
      * @param string $indexName
      * @return string|null
      */
-    final protected function extractTypeFromIndexName(string $indexName): ?string
+    protected function extractTypeFromIndexName(string $indexName): ?string
     {
         foreach ($this->indexDefiner->getSupportedIndices() as $type => $supportedIndex) {
             if ($indexName === $supportedIndex) {
@@ -190,7 +190,7 @@ abstract class AbstractConnector
      * @param string $type
      * @param bool $overwrite
      */
-    final protected function createIndex(string $type, bool $overwrite = false): void
+    protected function createIndex(string $type, bool $overwrite = false): void
     {
         $this->executeCreateIndex($this->getIndexName($type), $type, $overwrite);
     }
@@ -220,7 +220,7 @@ abstract class AbstractConnector
      *
      * @param string $type
      */
-    final protected function dropIndex(string $type): void
+    protected function dropIndex(string $type): void
     {
         $this->executeDropIndex($this->getIndexName($type), $type);
     }
@@ -232,7 +232,7 @@ abstract class AbstractConnector
      * @param array $parameters
      * @throws RuntimeException
      */
-    final protected function storeDocument(string $type, string $id, array $data, array $parameters = []): void
+    protected function storeDocument(string $type, string $id, array $data, array $parameters = []): void
     {
         $parameters = $this->prepareParameters($parameters, $type, $id);
         $body = $this->prepareDocument($type, $data);
@@ -257,7 +257,7 @@ abstract class AbstractConnector
      * @param array $parameters
      * @throws RuntimeException
      */
-    final protected function removeDocument(string $type, string $id, array $parameters = []): void
+    protected function removeDocument(string $type, string $id, array $parameters = []): void
     {
         $parameters = $this->prepareParameters($parameters, $type, $id);
 
@@ -294,7 +294,7 @@ abstract class AbstractConnector
      *
      * @param bool $force
      */
-    final protected function executeBulk(bool $force = false): void
+    protected function executeBulk(bool $force = false): void
     {
         // don't execute on empty body
         if (!$this->bulkBody || !$this->useBulk()) {
