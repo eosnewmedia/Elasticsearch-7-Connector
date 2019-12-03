@@ -108,7 +108,7 @@ abstract class AbstractConnector
      * @return array
      * @throws RuntimeException
      */
-    protected function getIndexDefinition(string $type): array
+    private function getIndexDefinition(string $type): array
     {
         $indexDefinition = $this->indexDefiner->getIndexDefinition($type);
         if (!$indexDefinition) {
@@ -123,7 +123,7 @@ abstract class AbstractConnector
      * @return array
      * @throws RuntimeException
      */
-    protected function getPipelineDefinitions(string $type): array
+    private function getPipelineDefinitions(string $type): array
     {
         $pipelineDefinitions = $this->indexDefiner->getPipelineDefinitions($type);
         if (!$pipelineDefinitions) {
@@ -139,7 +139,7 @@ abstract class AbstractConnector
      * @return array
      * @throws RuntimeException
      */
-    protected function prepareDocument(string $type, array $data): array
+    private function prepareDocument(string $type, array $data): array
     {
         $prepared = $this->indexDefiner->prepare($type, $data);
         if (!$prepared) {
@@ -157,7 +157,7 @@ abstract class AbstractConnector
      * @param bool $overwrite
      * @throws RuntimeException
      */
-    protected function executeCreateIndex(string $indexName, string $type, bool $overwrite = false): void
+    private function executeCreateIndex(string $indexName, string $type, bool $overwrite = false): void
     {
         if ($this->getConnection()->indices()->exists(['index' => $indexName])) {
             if (!$overwrite) {
@@ -202,7 +202,7 @@ abstract class AbstractConnector
      * @param string $type
      * @throws \RuntimeException
      */
-    protected function executeDropIndex(string $indexName, string $type): void
+    private function executeDropIndex(string $indexName, string $type): void
     {
         if (!$this->getConnection()->indices()->exists(['index' => $indexName])) {
             return;
@@ -276,7 +276,7 @@ abstract class AbstractConnector
      * @param string $id
      * @return array
      */
-    protected function prepareParameters(array $parameters, string $type, string $id): array
+    private function prepareParameters(array $parameters, string $type, string $id): array
     {
         if ($this->useBulk()) {
             $parameters['_index'] = $this->getIndexName($type);
@@ -294,7 +294,7 @@ abstract class AbstractConnector
      *
      * @param bool $force
      */
-    protected function executeBulk(bool $force = false): void
+    private function executeBulk(bool $force = false): void
     {
         // don't execute on empty body
         if (!$this->bulkBody || !$this->useBulk()) {
