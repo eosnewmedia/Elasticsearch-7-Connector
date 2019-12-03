@@ -36,7 +36,7 @@ abstract class AbstractParallelIndexConnector extends AbstractConnector
      * @return string
      * @throws RuntimeException
      */
-    protected function getParallelIndexName(string $type): string
+    final protected function getParallelIndexName(string $type): string
     {
         $indexName = $this->parallelIndexDefiner->getParallelIndexName($type);
         if (!$indexName) {
@@ -49,7 +49,7 @@ abstract class AbstractParallelIndexConnector extends AbstractConnector
     /**
      * @param string $type
      */
-    protected function switchToParallelIndex(string $type): void
+    final protected function switchToParallelIndex(string $type): void
     {
         $this->parallelIndexDefiner->switchToParallelIndex($type);
     }
@@ -61,7 +61,7 @@ abstract class AbstractParallelIndexConnector extends AbstractConnector
      * @param string $type
      * @param bool $removeOldIndex
      */
-    protected function migrateToParallelIndex(string $type, bool $removeOldIndex = true): void
+    final protected function migrateToParallelIndex(string $type, bool $removeOldIndex = true): void
     {
         $currentIndexName = $this->getIndexName($type);
         $parallelIndexName = $this->getParallelIndexName($type);
@@ -111,7 +111,7 @@ abstract class AbstractParallelIndexConnector extends AbstractConnector
      * @param array $hits
      * @param string $type
      */
-    protected function reindexDocumentsToParallelIndex(array $hits, string $type): void
+    final protected function reindexDocumentsToParallelIndex(array $hits, string $type): void
     {
         $documents = [];
         foreach ($hits as $document) {

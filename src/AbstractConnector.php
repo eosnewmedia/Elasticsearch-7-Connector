@@ -56,7 +56,7 @@ abstract class AbstractConnector
     /**
      * @return bool
      */
-    private function useBulk(): bool
+    final protected function useBulk(): bool
     {
         return $this->bulkSize > 1;
     }
@@ -64,7 +64,7 @@ abstract class AbstractConnector
     /**
      * @return Client
      */
-    protected function getConnection(): Client
+    final protected function getConnection(): Client
     {
         if (!$this->connection) {
             $this->connection = $this->connectionFactory->createConnection();
@@ -78,7 +78,7 @@ abstract class AbstractConnector
      * @return string
      * @throws RuntimeException
      */
-    protected function getIndexName(string $type): string
+    final protected function getIndexName(string $type): string
     {
         $indexName = $this->indexDefiner->getIndexName($type);
         if (!$indexName) {
@@ -92,7 +92,7 @@ abstract class AbstractConnector
      * @param string $indexName
      * @return string|null
      */
-    protected function extractTypeFromIndexName(string $indexName): ?string
+    final protected function extractTypeFromIndexName(string $indexName): ?string
     {
         foreach ($this->indexDefiner->getSupportedIndices() as $type => $supportedIndex) {
             if ($indexName === $supportedIndex) {
@@ -108,7 +108,7 @@ abstract class AbstractConnector
      * @return array
      * @throws RuntimeException
      */
-    private function getIndexDefinition(string $type): array
+    final protected function getIndexDefinition(string $type): array
     {
         $indexDefinition = $this->indexDefiner->getIndexDefinition($type);
         if (!$indexDefinition) {
@@ -123,7 +123,7 @@ abstract class AbstractConnector
      * @return array
      * @throws RuntimeException
      */
-    private function getPipelineDefinitions(string $type): array
+    final protected function getPipelineDefinitions(string $type): array
     {
         $pipelineDefinitions = $this->indexDefiner->getPipelineDefinitions($type);
         if (!$pipelineDefinitions) {
@@ -190,7 +190,7 @@ abstract class AbstractConnector
      * @param string $type
      * @param bool $overwrite
      */
-    protected function createIndex(string $type, bool $overwrite = false): void
+    final protected function createIndex(string $type, bool $overwrite = false): void
     {
         $this->executeCreateIndex($this->getIndexName($type), $type, $overwrite);
     }
@@ -202,7 +202,7 @@ abstract class AbstractConnector
      * @param string $type
      * @throws \RuntimeException
      */
-    private function executeDropIndex(string $indexName, string $type): void
+    final protected function executeDropIndex(string $indexName, string $type): void
     {
         if (!$this->getConnection()->indices()->exists(['index' => $indexName])) {
             return;
@@ -220,7 +220,7 @@ abstract class AbstractConnector
      *
      * @param string $type
      */
-    protected function dropIndex(string $type): void
+    final protected function dropIndex(string $type): void
     {
         $this->executeDropIndex($this->getIndexName($type), $type);
     }
@@ -232,7 +232,7 @@ abstract class AbstractConnector
      * @param array $parameters
      * @throws RuntimeException
      */
-    protected function storeDocument(string $type, string $id, array $data, array $parameters = []): void
+    final protected function storeDocument(string $type, string $id, array $data, array $parameters = []): void
     {
         $parameters = $this->prepareParameters($parameters, $type, $id);
         $body = $this->prepareDocument($type, $data);
@@ -257,7 +257,7 @@ abstract class AbstractConnector
      * @param array $parameters
      * @throws RuntimeException
      */
-    protected function removeDocument(string $type, string $id, array $parameters = []): void
+    final protected function removeDocument(string $type, string $id, array $parameters = []): void
     {
         $parameters = $this->prepareParameters($parameters, $type, $id);
 
@@ -294,7 +294,7 @@ abstract class AbstractConnector
      *
      * @param bool $force
      */
-    private function executeBulk(bool $force = false): void
+    final protected function executeBulk(bool $force = false): void
     {
         // don't execute on empty body
         if (!$this->bulkBody || !$this->useBulk()) {
