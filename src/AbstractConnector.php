@@ -6,6 +6,7 @@ namespace Eos\ElasticsearchConnector;
 use Elasticsearch\Client;
 use Eos\ElasticsearchConnector\Connection\ConnectionFactoryInterface;
 use Eos\ElasticsearchConnector\Index\IndexDefinerInterface;
+use RuntimeException;
 
 /**
  * @author Philipp Marien <marien@eosnewmedia.de>
@@ -75,28 +76,43 @@ abstract class AbstractConnector
     /**
      * @param string $type
      * @return string
-     * @throws \RuntimeException
+     * @throws RuntimeException
      */
     protected function getIndexName(string $type): string
     {
         $indexName = $this->indexDefiner->getIndexName($type);
         if (!$indexName) {
-            throw new \RuntimeException('No index defined for type ' . $type . '.');
+            throw new RuntimeException('No index defined for type ' . $type . '.');
         }
 
         return $indexName;
     }
 
     /**
+     * @param string $indexName
+     * @return string|null
+     */
+    protected function extractTypeFromIndexName(string $indexName): ?string
+    {
+        foreach ($this->indexDefiner->getSupportedIndices() as $type => $supportedIndex) {
+            if ($indexName === $supportedIndex) {
+                return $type;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * @param string $type
      * @return array
-     * @throws \RuntimeException
+     * @throws RuntimeException
      */
-    protected function getIndexDefinition(string $type): array
+    private function getIndexDefinition(string $type): array
     {
         $indexDefinition = $this->indexDefiner->getIndexDefinition($type);
         if (!$indexDefinition) {
-            throw new \RuntimeException('No index defined for type ' . $type . '.');
+            throw new RuntimeException('No index defined for type ' . $type . '.');
         }
 
         return $indexDefinition;
@@ -105,9 +121,9 @@ abstract class AbstractConnector
     /**
      * @param string $type
      * @return array
-     * @throws \RuntimeException
+     * @throws RuntimeException
      */
-    protected function getPipelineDefinitions(string $type): array
+    private function getPipelineDefinitions(string $type): array
     {
         $pipelineDefinitions = $this->indexDefiner->getPipelineDefinitions($type);
         if (!$pipelineDefinitions) {
@@ -121,13 +137,13 @@ abstract class AbstractConnector
      * @param string $type
      * @param array $data
      * @return array
-     * @throws \RuntimeException
+     * @throws RuntimeException
      */
-    protected function prepareDocument(string $type, array $data): array
+    final protected function prepareDocument(string $type, array $data): array
     {
         $prepared = $this->indexDefiner->prepare($type, $data);
         if (!$prepared) {
-            throw new \RuntimeException('Preparing documents of type ' . $type . ' is not possible.');
+            throw new RuntimeException('Preparing documents of type ' . $type . ' is not possible.');
         }
 
         return $prepared;
@@ -139,13 +155,13 @@ abstract class AbstractConnector
      * @param string $indexName
      * @param string $type
      * @param bool $overwrite
-     * @throws \RuntimeException
+     * @throws RuntimeException
      */
-    protected function executeCreateIndex(string $indexName, string $type, bool $overwrite = false): void
+    final protected function executeCreateIndex(string $indexName, string $type, bool $overwrite = false): void
     {
         if ($this->getConnection()->indices()->exists(['index' => $indexName])) {
             if (!$overwrite) {
-                throw new \RuntimeException('Elasticsearch index ' . $indexName . ' does already exists.');
+                throw new RuntimeException('Elasticsearch index ' . $indexName . ' does already exists.');
             }
 
             $this->getConnection()->indices()->delete(['index' => $indexName]);
@@ -186,7 +202,7 @@ abstract class AbstractConnector
      * @param string $type
      * @throws \RuntimeException
      */
-    protected function executeDropIndex(string $indexName, string $type): void
+    private function executeDropIndex(string $indexName, string $type): void
     {
         if (!$this->getConnection()->indices()->exists(['index' => $indexName])) {
             return;
@@ -214,7 +230,7 @@ abstract class AbstractConnector
      * @param string $id
      * @param array $data
      * @param array $parameters
-     * @throws \RuntimeException
+     * @throws RuntimeException
      */
     protected function storeDocument(string $type, string $id, array $data, array $parameters = []): void
     {
@@ -239,7 +255,7 @@ abstract class AbstractConnector
      * @param string $type
      * @param string $id
      * @param array $parameters
-     * @throws \RuntimeException
+     * @throws RuntimeException
      */
     protected function removeDocument(string $type, string $id, array $parameters = []): void
     {
@@ -260,14 +276,13 @@ abstract class AbstractConnector
      * @param string $id
      * @return array
      */
-    protected function prepareParameters(array $parameters, string $type, string $id): array
+    final protected function prepareParameters(array $parameters, string $type, string $id): array
     {
         if ($this->useBulk()) {
             $parameters['_index'] = $this->getIndexName($type);
             $parameters['_id'] = $id;
         } else {
             $parameters['index'] = $this->getIndexName($type);
-            $parameters['type'] = '_doc'; //@todo remove as soon as elasticsearch/elasticsearch ^7.0 is used
             $parameters['id'] = $id;
         }
 
@@ -279,7 +294,7 @@ abstract class AbstractConnector
      *
      * @param bool $force
      */
-    protected function executeBulk(bool $force = false): void
+    private function executeBulk(bool $force = false): void
     {
         // don't execute on empty body
         if (!$this->bulkBody || !$this->useBulk()) {
@@ -287,7 +302,7 @@ abstract class AbstractConnector
         }
 
         // don't execute if size not reached and execution is not forced
-        if (!$force && \count($this->bulkBody) < $this->bulkSize) {
+        if (!$force && count($this->bulkBody) < $this->bulkSize) {
             return;
         }
 

@@ -17,6 +17,13 @@ interface IndexDefinerInterface
     public function getIndexName(string $type): ?string;
 
     /**
+     * Returns an array where the type is used as key and the index name is used as value.
+     *
+     * @return string[]
+     */
+    public function getSupportedIndices(): array;
+
+    /**
      * Returns the index definition for the given type.
      *
      * @param string $type

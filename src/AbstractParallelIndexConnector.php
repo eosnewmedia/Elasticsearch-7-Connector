@@ -5,6 +5,7 @@ namespace Eos\ElasticsearchConnector;
 
 use Eos\ElasticsearchConnector\Connection\ConnectionFactoryInterface;
 use Eos\ElasticsearchConnector\Index\ParallelIndexDefinerInterface;
+use RuntimeException;
 
 /**
  * @author Philipp Marien <marien@eosnewmedia.de>
@@ -33,13 +34,13 @@ abstract class AbstractParallelIndexConnector extends AbstractConnector
     /**
      * @param string $type
      * @return string
-     * @throws \RuntimeException
+     * @throws RuntimeException
      */
     protected function getParallelIndexName(string $type): string
     {
         $indexName = $this->parallelIndexDefiner->getParallelIndexName($type);
         if (!$indexName) {
-            throw new \RuntimeException('No parallel index defined for type ' . $type . '.');
+            throw new RuntimeException('No parallel index defined for type ' . $type . '.');
         }
 
         return $indexName;
@@ -84,7 +85,7 @@ abstract class AbstractParallelIndexConnector extends AbstractConnector
                 'scroll' => '1m',
             ]);
 
-            if (\count($scrollResult['hits']['hits']) === 0) {
+            if (count($scrollResult['hits']['hits']) === 0) {
                 break;
             }
 
@@ -117,7 +118,6 @@ abstract class AbstractParallelIndexConnector extends AbstractConnector
             $documents[] = [
                 'index' => [
                     '_index' => $this->getParallelIndexName($type),
-                    '_type' => $document['_type'],
                     '_id' => $document['_id'],
                 ],
             ];
