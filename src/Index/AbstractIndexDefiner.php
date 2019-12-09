@@ -101,7 +101,7 @@ abstract class AbstractIndexDefiner implements IndexDefinerInterface
             return null;
         }
 
-        $definition = $this->getIndexDefinition($type);
+        $definition = (array)$this->getIndexDefinition($type);
 
         if (!array_key_exists('mappings', $definition)) {
             return $document;
@@ -120,7 +120,7 @@ abstract class AbstractIndexDefiner implements IndexDefinerInterface
      *
      * @return array
      */
-    private function prepareObject($definition, array $object): array
+    private function prepareObject(array $definition, array $object): array
     {
         foreach ($object as $key => $value) {
             if (!array_key_exists($key, $definition)) {
@@ -129,22 +129,22 @@ abstract class AbstractIndexDefiner implements IndexDefinerInterface
             }
 
             if ($definition[$key]['type'] === 'object') {
-                if (!\is_array($value) && $value !== null) {
+                if (!is_array($value) && $value !== null) {
                     unset($object[$key]);
                     continue;
                 }
 
-                if (!\array_key_exists('properties', $definition[$key]) || \count($value) === 0) {
+                if (!array_key_exists('properties', $definition[$key]) || count($value) === 0) {
                     continue;
                 }
 
                 // if array is object
                 if (array_keys($value) !== range(0, count($value) - 1)) {
-                    $object[$key] = $this->prepareObject($definition[$key]['properties'], $value);
+                    $object[$key] = $this->prepareObject((array)$definition[$key]['properties'], $value);
                 } else { // if array is list of objects
                     $object[$key] = [];
                     foreach ($value as $item) {
-                        $object[$key][] = $this->prepareObject($definition[$key]['properties'], $item);
+                        $object[$key][] = $this->prepareObject((array)$definition[$key]['properties'], $item);
                     }
                 }
             }
