@@ -6,6 +6,7 @@ namespace Eos\ElasticsearchConnector;
 use Eos\ElasticsearchConnector\Connection\ConnectionFactoryInterface;
 use Eos\ElasticsearchConnector\Index\ParallelIndexDefinerInterface;
 use RuntimeException;
+use Throwable;
 
 /**
  * @author Philipp Marien <marien@eosnewmedia.de>
@@ -115,15 +116,25 @@ abstract class AbstractParallelIndexConnector extends AbstractConnector
     {
         $documents = [];
         foreach ($hits as $document) {
-            $documents[] = [
-                'index' => [
-                    '_index' => $this->getParallelIndexName($type),
-                    '_id' => $document['_id'],
-                ],
-            ];
-            $documents[] = $this->prepareDocument($type, $document['_source']);
+            try {
+                $documents[] = [
+                    'index' => [
+                        '_index' => $this->getParallelIndexName($type),
+                        '_id' => $document['_id'],
+                    ],
+                ];
+                $documents[] = $this->prepareDocument($type, $document['_source']);
+            } catch (Throwable $e) {
+
+            }
         }
 
-        $this->getConnection()->bulk(['body' => $documents]);
+        if (count($documents) > 0) {
+            try {
+                $this->getConnection()->bulk(['body' => $documents]);
+            } catch (Throwable $e) {
+
+            }
+        }
     }
 }
