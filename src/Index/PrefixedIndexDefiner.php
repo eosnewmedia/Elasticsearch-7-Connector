@@ -79,11 +79,12 @@ class PrefixedIndexDefiner implements ParallelIndexDefinerInterface
      * Returns the index definition for the given type.
      *
      * @param string $type
+     * @param string|null $pipelineNamePrefix
      * @return array|null
      */
-    public function getIndexDefinition(string $type): ?array
+    public function getIndexDefinition(string $type, ?string $pipelineNamePrefix = null): ?array
     {
-        return $this->indexDefiner->getIndexDefinition($type);
+        return $this->indexDefiner->getIndexDefinition($type, $pipelineNamePrefix);
     }
 
     /**

@@ -27,9 +27,10 @@ interface IndexDefinerInterface
      * Returns the index definition for the given type.
      *
      * @param string $type
+     * @param string|null $pipelineNamePrefix
      * @return array|null
      */
-    public function getIndexDefinition(string $type): ?array;
+    public function getIndexDefinition(string $type, ?string $pipelineNamePrefix = null): ?array;
 
     /**
      * Returns all pipeline definitions for the given type.

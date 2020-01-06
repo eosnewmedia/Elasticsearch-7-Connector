@@ -110,7 +110,7 @@ abstract class AbstractConnector
      */
     final protected function getIndexDefinition(string $type): array
     {
-        $indexDefinition = $this->indexDefiner->getIndexDefinition($type);
+        $indexDefinition = $this->indexDefiner->getIndexDefinition($type, $this->getIndexName($type));
         if (!$indexDefinition) {
             throw new RuntimeException('No index defined for type ' . $type . '.');
         }
