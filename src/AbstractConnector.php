@@ -125,7 +125,7 @@ abstract class AbstractConnector
      */
     final protected function getPipelineDefinitions(string $type): array
     {
-        $pipelineDefinitions = $this->indexDefiner->getPipelineDefinitions($type, $this->getIndexName($type) . '_');
+        $pipelineDefinitions = $this->indexDefiner->getPipelineDefinitions($type, $this->getIndexName($type));
         if (!$pipelineDefinitions) {
             return [];
         }
