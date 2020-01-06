@@ -96,12 +96,24 @@ class IndexDefinerRegistry implements ParallelIndexDefinerInterface
      * As array key the pipeline id must be used, as value the pipeline definition must be used.
      *
      * @param string $type
+     * @param string|null $pipelineNamePrefix
      * @return array|null
      */
-    public function getPipelineDefinitions(string $type): ?array
+    public function getPipelineDefinitions(string $type, ?string $pipelineNamePrefix = null): ?array
     {
         return array_key_exists($type, $this->definitions) ?
-            $this->definitions[$type]->getPipelineDefinitions($type) : null;
+            $this->definitions[$type]->getPipelineDefinitions($type, $pipelineNamePrefix) : null;
+    }
+
+    /**
+     * @param string $type
+     * @param string|null $pipelineNamePrefix
+     * @return string|null
+     */
+    public function getDefaultPipelineName(string $type, ?string $pipelineNamePrefix = null): ?string
+    {
+        return array_key_exists($type, $this->definitions) ?
+            $this->definitions[$type]->getDefaultPipelineName($type, $pipelineNamePrefix) : null;
     }
 
     /**

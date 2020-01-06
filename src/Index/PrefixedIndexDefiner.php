@@ -91,11 +91,22 @@ class PrefixedIndexDefiner implements ParallelIndexDefinerInterface
      * As array key the pipeline id must be used, as value the pipeline definition must be used.
      *
      * @param string $type
+     * @param string|null $pipelineNamePrefix
      * @return array|null
      */
-    public function getPipelineDefinitions(string $type): ?array
+    public function getPipelineDefinitions(string $type, ?string $pipelineNamePrefix = null): ?array
     {
-        return $this->indexDefiner->getPipelineDefinitions($type);
+        return $this->indexDefiner->getPipelineDefinitions($type, $pipelineNamePrefix);
+    }
+
+    /**
+     * @param string $type
+     * @param string|null $pipelineNamePrefix
+     * @return string|null
+     */
+    public function getDefaultPipelineName(string $type, ?string $pipelineNamePrefix = null): ?string
+    {
+        return $this->indexDefiner->getDefaultPipelineName($type, $pipelineNamePrefix);
     }
 
     /**

@@ -37,9 +37,17 @@ interface IndexDefinerInterface
      * Is you wish to always execute a pipeline for a type, define "index.default_pipeline" in your index settings
      *
      * @param string $type
+     * @param string|null $pipelineNamePrefix
      * @return array|null
      */
-    public function getPipelineDefinitions(string $type): ?array;
+    public function getPipelineDefinitions(string $type, ?string $pipelineNamePrefix = null): ?array;
+
+    /**
+     * @param string $type
+     * @param string|null $pipelineNamePrefix
+     * @return string|null
+     */
+    public function getDefaultPipelineName(string $type, ?string $pipelineNamePrefix = null): ?string;
 
     /**
      * Prepares a given document to be stored in the index for the given type.
