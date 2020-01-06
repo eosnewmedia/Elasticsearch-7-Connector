@@ -43,23 +43,25 @@ abstract class AbstractIndexDefiner implements IndexDefinerInterface
      * Returns the index definition for the given type.
      *
      * @param string $type
+     * @param string|null $pipelineNamePrefix
      * @return array|null
      */
-    final public function getIndexDefinition(string $type): ?array
+    final public function getIndexDefinition(string $type, ?string $pipelineNamePrefix = null): ?array
     {
         if ($this->getType() !== $type) {
             return null;
         }
 
-        return $this->getIndexDefinitionForType();
+        return $this->getIndexDefinitionForType($pipelineNamePrefix);
     }
 
     /**
      * Returns the index definition for the type.
      *
+     * @param string|null $pipelineNamePrefix
      * @return array
      */
-    abstract protected function getIndexDefinitionForType(): array;
+    abstract protected function getIndexDefinitionForType(?string $pipelineNamePrefix = null): array;
 
     /**
      * Returns all pipeline definitions for the given type.
