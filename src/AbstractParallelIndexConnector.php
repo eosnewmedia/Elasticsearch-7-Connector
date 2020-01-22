@@ -61,50 +61,60 @@ abstract class AbstractParallelIndexConnector extends AbstractConnector
      *
      * @param string $type
      * @param bool $removeOldIndex
+     * @throws Throwable
      */
     protected function migrateToParallelIndex(string $type, bool $removeOldIndex = true): void
     {
-        $currentIndexName = $this->getIndexName($type);
-        $parallelIndexName = $this->getParallelIndexName($type);
+        try {
+            $currentIndexName = $this->getIndexName($type);
+            $parallelIndexName = $this->getParallelIndexName($type);
 
-        // create new index
-        $this->executeCreateIndex($parallelIndexName, $type, true);
+            // create new index
+            $this->executeCreateIndex($parallelIndexName, $type, true);
 
-        // fetch documents from current index and store to new index
-        $searchResult = $this->getConnection()->search(
-            [
-                'index' => $currentIndexName,
-                'scroll' => '1m',
-            ]
-        );
-        $this->reindexDocumentsToParallelIndex($searchResult['hits']['hits'], $type);
-
-        $context = $searchResult['_scroll_id'];
-        while (true) {
-            $scrollResult = $this->getConnection()->scroll([
-                'scroll_id' => $context,
-                'scroll' => '1m',
-            ]);
-
-            if (count($scrollResult['hits']['hits']) === 0) {
-                break;
-            }
-
-            $this->reindexDocumentsToParallelIndex($scrollResult['hits']['hits'], $type);
-
-            $context = $scrollResult['_scroll_id'];
-        }
-
-        // switch current index to new index
-        $this->switchToParallelIndex($type);
-
-        if ($removeOldIndex) {
-            // delete old index (without pipelines!)
-            $this->getConnection()->indices()->delete(
+            // fetch documents from current index and store to new index
+            $searchResult = $this->getConnection()->search(
                 [
                     'index' => $currentIndexName,
+                    'scroll' => '1m',
                 ]
             );
+            $this->reindexDocumentsToParallelIndex($searchResult['hits']['hits'], $type);
+
+            $context = $searchResult['_scroll_id'];
+            while (true) {
+                $scrollResult = $this->getConnection()->scroll([
+                    'scroll_id' => $context,
+                    'scroll' => '1m',
+                ]);
+
+                if (count($scrollResult['hits']['hits']) === 0) {
+                    break;
+                }
+
+                $this->reindexDocumentsToParallelIndex($scrollResult['hits']['hits'], $type);
+
+                $context = $scrollResult['_scroll_id'];
+            }
+
+            // switch current index to new index
+            $this->switchToParallelIndex($type);
+
+            if ($removeOldIndex) {
+                // delete old index (without pipelines!)
+                $this->getConnection()->indices()->delete(
+                    [
+                        'index' => $currentIndexName,
+                    ]
+                );
+            }
+
+        } catch (Throwable $e) {
+            $this->getLogger()->error(
+                'Failed to switch index for type "' . $type . '"',
+                ['reason' => $e->getMessage()]
+            );
+            throw $e;
         }
     }
 
@@ -131,9 +141,13 @@ abstract class AbstractParallelIndexConnector extends AbstractConnector
 
         if (count($documents) > 0) {
             try {
-                $this->getConnection()->bulk(['body' => $documents]);
+                $response = $this->getConnection()->bulk(['body' => $documents]);
+                $this->handleBulkResponse($response);
             } catch (Throwable $e) {
-
+                $this->getLogger()->error(
+                    'Failed to reindex documents',
+                    ['reason' => $e->getMessage()]
+                );
             }
         }
     }

@@ -6,13 +6,20 @@ namespace Eos\ElasticsearchConnector;
 use Elasticsearch\Client;
 use Eos\ElasticsearchConnector\Connection\ConnectionFactoryInterface;
 use Eos\ElasticsearchConnector\Index\IndexDefinerInterface;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use RuntimeException;
+use Throwable;
 
 /**
  * @author Philipp Marien <marien@eosnewmedia.de>
  */
-abstract class AbstractConnector
+abstract class AbstractConnector implements LoggerAwareInterface
 {
+    use LoggerAwareTrait;
+
     /**
      * @var ConnectionFactoryInterface
      */
@@ -51,6 +58,18 @@ abstract class AbstractConnector
         $this->connectionFactory = $connectionFactory;
         $this->indexDefiner = $indexDefiner;
         $this->bulkSize = $bulkSize;
+    }
+
+    /**
+     * @return LoggerInterface
+     */
+    protected function getLogger(): LoggerInterface
+    {
+        if (!$this->logger) {
+            $this->logger = new NullLogger();
+        }
+
+        return $this->logger;
     }
 
     /**
@@ -155,33 +174,59 @@ abstract class AbstractConnector
      * @param string $indexName
      * @param string $type
      * @param bool $overwrite
-     * @throws RuntimeException
+     * @throws Throwable
      */
     final protected function executeCreateIndex(string $indexName, string $type, bool $overwrite = false): void
     {
-        if ($this->getConnection()->indices()->exists(['index' => $indexName])) {
-            if (!$overwrite) {
-                throw new RuntimeException('Elasticsearch index ' . $indexName . ' does already exists.');
+        try {
+
+            if ($this->getConnection()->indices()->exists(['index' => $indexName])) {
+                $this->getLogger()->info('Index "' . $indexName . '" does already exists');
+
+                if (!$overwrite) {
+                    throw new RuntimeException('Elasticsearch index ' . $indexName . ' does already exists.');
+                }
+
+                $this->getLogger()->debug('Execute: Delete index "' . $indexName . '"');
+
+                $this->getConnection()->indices()->delete(['index' => $indexName]);
+
+                $this->getLogger()->info('Deleted index "' . $indexName . '"');
             }
 
-            $this->getConnection()->indices()->delete(['index' => $indexName]);
-        }
+            foreach ($this->getPipelineDefinitions($type) as $pipeline => $definition) {
+                $this->getLogger()->debug('Execute: Create pipeline "' . $pipeline . '"',
+                    ['definition' => $definition]);
 
-        foreach ($this->getPipelineDefinitions($type) as $pipeline => $definition) {
-            $this->getConnection()->ingest()->putPipeline(
+                $this->getConnection()->ingest()->putPipeline(
+                    [
+                        'id' => $pipeline,
+                        'body' => $definition
+                    ]
+                );
+
+                $this->getLogger()->info('Created pipeline "' . $pipeline . '"');
+            }
+
+            $indexDefinition = $this->getIndexDefinition($type);
+
+            $this->getLogger()->debug('Execute: Create index "' . $indexName . '"', ['body' => $indexDefinition]);
+
+            $this->getConnection()->indices()->create(
                 [
-                    'id' => $pipeline,
-                    'body' => $definition
+                    'index' => $indexName,
+                    'body' => $indexDefinition
                 ]
             );
-        }
 
-        $this->getConnection()->indices()->create(
-            [
-                'index' => $indexName,
-                'body' => $this->getIndexDefinition($type)
-            ]
-        );
+            $this->getLogger()->info('Created index "' . $indexName . '"');
+        } catch (Throwable $e) {
+            $this->getLogger()->critical(
+                'Failed to create index "' . $indexName . '"',
+                ['reason' => $e->getMessage()]
+            );
+            throw $e;
+        }
     }
 
     /**
@@ -189,6 +234,7 @@ abstract class AbstractConnector
      *
      * @param string $type
      * @param bool $overwrite
+     * @throws Throwable
      */
     protected function createIndex(string $type, bool $overwrite = false): void
     {
@@ -200,25 +246,44 @@ abstract class AbstractConnector
      *
      * @param string $indexName
      * @param string $type
-     * @throws \RuntimeException
+     * @throws Throwable
      */
     final protected function executeDropIndex(string $indexName, string $type): void
     {
-        if (!$this->getConnection()->indices()->exists(['index' => $indexName])) {
-            return;
-        }
+        try {
+            if (!$this->getConnection()->indices()->exists(['index' => $indexName])) {
+                $this->getLogger()->info('Index "' . $indexName . '" does not exist');
 
-        foreach ($this->getPipelineDefinitions($type) as $pipeline => $definition) {
-            $this->getConnection()->ingest()->deletePipeline(['id' => $pipeline]);
-        }
+                return;
+            }
 
-        $this->getConnection()->indices()->delete(['index' => $indexName]);
+            foreach ($this->getPipelineDefinitions($type) as $pipeline => $definition) {
+                $this->getLogger()->debug('Execute: Delete pipeline "' . $pipeline . '"');
+
+                $this->getConnection()->ingest()->deletePipeline(['id' => $pipeline]);
+
+                $this->getLogger()->info('Deleted pipeline "' . $pipeline . '"');
+            }
+
+            $this->getLogger()->debug('Execute: Delete index "' . $indexName . '"');
+
+            $this->getConnection()->indices()->delete(['index' => $indexName]);
+
+            $this->getLogger()->info('Deleted index "' . $indexName . '"');
+        } catch (Throwable $e) {
+            $this->getLogger()->error(
+                'Failed to delete index "' . $indexName . '"',
+                ['reason' => $e->getMessage()]
+            );
+            throw $e;
+        }
     }
 
     /**
      * Drops the elasticsearch index for the given type
      *
      * @param string $type
+     * @throws Throwable
      */
     protected function dropIndex(string $type): void
     {
@@ -230,27 +295,35 @@ abstract class AbstractConnector
      * @param string $id
      * @param array $data
      * @param array $parameters
-     * @throws RuntimeException
+     * @throws Throwable
      */
     protected function storeDocument(string $type, string $id, array $data, array $parameters = []): void
     {
-        $parameters = $this->prepareParameters($parameters, $type, $id);
-        $body = $this->prepareDocument($type, $data);
+        try {
+            $parameters = $this->prepareParameters($parameters, $type, $id);
+            $body = $this->prepareDocument($type, $data);
 
-        if ($this->useBulk()) {
-            $this->bulkBody[] = ['index' => $parameters,];
-            $this->bulkBody[] = $body;
+            if ($this->useBulk()) {
+                $this->bulkBody[] = ['index' => $parameters,];
+                $this->bulkBody[] = $body;
 
-            $this->executeBulk();
-        } else {
-            $parameters['body'] = $body;
+                $this->executeBulk();
+            } else {
+                $parameters['body'] = $body;
 
-            $pipelineName = $this->indexDefiner->getDefaultPipelineName($type, $this->getIndexName($type));
-            if ($pipelineName) {
-                $parameters['pipeline'] = $pipelineName;
+                $pipelineName = $this->indexDefiner->getDefaultPipelineName($type, $this->getIndexName($type));
+                if ($pipelineName) {
+                    $parameters['pipeline'] = $pipelineName;
+                }
+
+                $this->getConnection()->index($parameters);
             }
-
-            $this->getConnection()->index($parameters);
+        } catch (Throwable $e) {
+            $this->getLogger()->error(
+                'Failed to store document "' . $id . '" of type "' . $type . '"',
+                ['reason' => $e->getMessage()]
+            );
+            throw $e;
         }
     }
 
@@ -260,18 +333,26 @@ abstract class AbstractConnector
      * @param string $type
      * @param string $id
      * @param array $parameters
-     * @throws RuntimeException
+     * @throws Throwable
      */
     protected function removeDocument(string $type, string $id, array $parameters = []): void
     {
-        $parameters = $this->prepareParameters($parameters, $type, $id);
+        try {
+            $parameters = $this->prepareParameters($parameters, $type, $id);
 
-        if ($this->useBulk()) {
-            $this->bulkBody[] = ['delete' => $parameters,];
+            if ($this->useBulk()) {
+                $this->bulkBody[] = ['delete' => $parameters,];
 
-            $this->executeBulk();
-        } else {
-            $this->getConnection()->delete($parameters);
+                $this->executeBulk();
+            } else {
+                $this->getConnection()->delete($parameters);
+            }
+        } catch (Throwable $e) {
+            $this->getLogger()->error(
+                'Failed to remove document "' . $id . '" of type "' . $type . '"',
+                ['reason' => $e->getMessage()]
+            );
+            throw $e;
         }
     }
 
@@ -311,10 +392,19 @@ abstract class AbstractConnector
             return;
         }
 
-        $this->getConnection()->bulk(['body' => $this->bulkBody, 'refresh' => true]);
+        $response = $this->getConnection()->bulk(['body' => $this->bulkBody, 'refresh' => true]);
+        $this->handleBulkResponse($response);
 
         // clear bulk body
         $this->bulkBody = null;
+    }
+
+    /**
+     * @param array $response
+     */
+    protected function handleBulkResponse(array $response): void
+    {
+
     }
 
     /**
