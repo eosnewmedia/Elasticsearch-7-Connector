@@ -148,7 +148,11 @@ abstract class AbstractIndexDefiner implements IndexDefinerInterface
                     continue;
                 }
 
-                if (!array_key_exists('properties', $definition[$key]) || count($value) === 0) {
+                if (!array_key_exists('properties', $definition[$key])) {
+                    continue;
+                }
+
+                if (!$value || count($value) === 0) {
                     continue;
                 }
 
